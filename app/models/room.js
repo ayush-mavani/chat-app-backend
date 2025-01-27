@@ -3,10 +3,10 @@ const mongoose = require("mongoose");
 const roomSchema = new mongoose.Schema(
   {
     roomName: String,
-    content: String,
+    userName: String,
+    socketId: String,
   },
   { timestamps: true }
 );
 
-const Room = mongoose.model("room", roomSchema);
-module.exports = Room;
+module.exports = mongoose.model("room", roomSchema);

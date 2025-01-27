@@ -1,14 +1,7 @@
-const mongoose = require("mongoose");
-
-const getSocketUsers = (userArray, value) => {
-  return userArray.filter((roomName) => roomName.roomName === value);
-};
-
 let io;
-module.exports = (server) => {
-  const app_user = [];
-  console.log("socket...");
+const Room = require("../models/room");
 
+module.exports = (server) => {
   io = require("socket.io")(server, {
     cors: {
       origin: "*",
@@ -20,19 +13,30 @@ module.exports = (server) => {
   });
 
   io.on("connection", async (socket) => {
-    console.log("socket connect...");
-
-    socket.on("join", async ({ roomName }) => {
+    socket.on("join", async ({ roomName, userName }) => {
       try {
-        console.log("join...", roomName);
+        const userExists = await Room.findOne({ roomName, userName });
+        console.log("userExists::: ", userExists);
 
-        app_user.push({ roomName, socketId: socket.id });
+        if (userExists) {
+          socket.emit("error", {
+            status: false,
+            message: "Username already taken in this room",
+          });
+        } else {
+          await new Room({
+            roomName,
+            userName,
+            socketId: socket.id,
+          }).save();
+          socket.join(roomName);
 
-        socket.join(roomName);
-        console.log("roomName...", roomName, socket.id);
+          socket
+            .to(roomName)
+            .emit("user-joined", `${userName} has joined room`);
 
-        socket.emit("user-joined", socket.id);
-        socket.broadcast.emit("user-joined", socket.id);
+          socket.broadcast.emit("getUsersInRoom", "world");
+        }
       } catch (err) {
         console.log("join err...");
       }
@@ -41,12 +45,7 @@ module.exports = (server) => {
     socket.on("note-update", async ({ roomName, content }) => {
       try {
         console.log("not-update...", roomName, content);
-
-        const getALlSocketUser = getSocketUsers(app_user, roomName);
-
-        for (let i = 0; i < getALlSocketUser.length; i++) {
-          io.to(getALlSocketUser[i].socketId).emit("received-note", content);
-        }
+        socket.to(roomName).emit("received-note", content);
       } catch (err) {
         console.log("not-updated err...", err.message);
       }
@@ -55,20 +54,22 @@ module.exports = (server) => {
     socket.on("typing", async ({ roomName, userName }) => {
       try {
         console.log("typing...", roomName, userName);
-
-        const getALlSocketUser = getSocketUsers(app_user, roomName);
-        console.log("getALlSocketUser...", getALlSocketUser);
-
-        for (let i = 0; i < getALlSocketUser.length; i++) {
-          io.to(getALlSocketUser[i].socketId).emit("user-typing", userName);
-        }
+        socket.to(roomName).emit("user-typing", userName);
       } catch (err) {
         console.log("typing err...", err.message);
       }
     });
 
-    // socket.disconnect((data) => {
-    //   console.log("disconnect...", data);
-    // });
+    socket.on("disconnecting", async () => {
+      const id = socket.id;
+      const left_User = await Room.findOne({ socketId: id });
+      if (left_User) {
+        console.log("left_User::: ", left_User);
+        socket
+          .to(left_User?.roomName)
+          .emit("leave-room", `${left_User?.userName} is left room`);
+        await Room.findOneAndDelete({ socketId: id });
+      }
+    });
   });
 };

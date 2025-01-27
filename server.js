@@ -28,19 +28,16 @@ app.post("/room/:roomName/note", async (req, res) => {
   }
 });
 
-app.get("/room/:roomName", async (req, res) => {
+app.get("/userByRoom/:roomName", async (req, res) => {
   try {
     console.log("room...", req.params);
 
     const { roomName } = req.params;
 
-    let room = await Room.findOne({ roomName });
+    let result = await Room.find({ roomName });
+    console.log("result::: ", result);
 
-    if (!room) {
-      room = await new Room({ roomName, content: "" }).save();
-    }
-
-    return res.json({ status: true, message: "Room Created!", data: room });
+    return res.json({ status: true, message: "Room Created!", data: result });
   } catch (err) {
     console.log("room error...", err);
     return res.json({ status: false, message: "Server Error!" });
