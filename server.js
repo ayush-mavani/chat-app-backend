@@ -61,8 +61,8 @@ connect(env.DB_CONNECTION_STRING)
     console.log("Error connecting...", err.message);
   });
 
-const Http = require("http").createServer(app);
+var http = require("http").createServer(app);
 const socket = require("./app/socket/socket");
-socket(Http);
+socket(http);
 
-module.exports = Http;
+module.exports = http;

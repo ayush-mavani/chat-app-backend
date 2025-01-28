@@ -1,8 +1,8 @@
 const env = require("./app/config/env");
-const Http = require("./server");
+const App = require("./server");
 
-Http.listen(env.PORT, () => {
+App.listen(env.PORT, () => {
   console.log("listening on port " + env.PORT);
 });
 
-module.exports = Http;
+module.exports = App;
