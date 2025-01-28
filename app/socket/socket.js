@@ -60,6 +60,15 @@ module.exports = (server) => {
       }
     });
 
+    socket.on("run-code", async ({ roomName, message, status }) => {
+      try {
+        console.log("run-code...", roomName, message);
+        socket.to(roomName).emit("output-code", { message, status });
+      } catch (err) {
+        console.log("typing err...", err.message);
+      }
+    });
+
     socket.on("disconnecting", async () => {
       const id = socket.id;
       const left_User = await Room.findOne({ socketId: id });

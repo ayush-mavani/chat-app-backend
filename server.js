@@ -28,6 +28,15 @@ app.post("/room/:roomName/note", async (req, res) => {
   }
 });
 
+app.get("/deleteAllUser", async (req, res) => {
+  try {
+    await Room.deleteMany();
+    return res.json({ status: true, message: "Delete all User!" });
+  } catch (err) {
+    return res.json({ status: false, message: "Server Error!" });
+  }
+});
+
 app.get("/userByRoom/:roomName", async (req, res) => {
   try {
     console.log("room...", req.params);
